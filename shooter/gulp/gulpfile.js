@@ -17,6 +17,7 @@ var sass = require('gulp-sass');
 var SRC_PATH = './';
 
 var SCRIPTS_PATH = SRC_PATH+'scripts/*.js';
+var SCENES_PATH = SRC_PATH+'scripts/scenes/*.js';
 var SCRIPTS_WATCH_PATH = SRC_PATH+'scripts/**/*.js';
 
 var SCSS_PATH = SRC_PATH+'scss/styles.scss';
@@ -58,7 +59,7 @@ gulp.task('sass-styles', function() {
 gulp.task('scripts', function() {
     console.log('Scripting...');
 
-    return gulp.src([SRC_PATH+'scripts/setup.js',SRC_PATH+'scripts/functions.js',SRC_PATH+'scripts/scene-main.js', SRC_PATH+'scripts/game.js'])
+    return gulp.src([SRC_PATH+'scripts/setup.js',SRC_PATH+'scripts/functions.js',SCENES_PATH, SRC_PATH+'scripts/game.js'])
         .pipe(plumber(function(err){
           //this function will run WHEN an error occurs in this task
           console.log('Styles Task Error');

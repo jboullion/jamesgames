@@ -17,3 +17,31 @@ scenes.states = [];
 scenes.states[MENUSCENE] = 'menu';
 scenes.states[MAINSCENE] = 'main';
 scenes.states[SCORESCENE] = 'score';
+
+
+/**
+ * Player and enemies
+ */
+//setup enemies
+var enemies = {};
+enemies.dude = {};
+enemies.dude.sprite = null;
+enemies.dude.speed = 6;
+enemies.dude.isJumping = false;
+enemies.dude.jumpTimer = 0;
+enemies.dude.tilemap = 300;
+enemies.dude.velocity = 100;
+
+var player = {},
+	barrel = null,
+	bullets = null,
+	bullet_velocity = 1000,
+	nextFire = 0, //next game.time to fire at
+	bulletRate = 100, //millisecond delay on bullet shots
+	largeEnemy = {},
+	enemyGroup = null,
+	bullet = null;
+
+player.sprite = null;
+player.speed = 6;
+player.velocity = 350;

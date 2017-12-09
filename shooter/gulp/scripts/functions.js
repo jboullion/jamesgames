@@ -121,5 +121,29 @@ function addKeyCallback(key, fn, args){
  */
 function getRandomInt(min,max)
 {
-    return Math.floor(Math.random()*(max-min+1)+min);
+	return Math.floor(Math.random()*(max-min+1)+min);
+}
+
+/**
+ * Setup arrays to have a random function to return one of their elements at random
+ */
+Array.prototype.random = function () {
+  return this[Math.floor((Math.random()*this.length))];
+}
+
+/**
+ * Show the game fps. Only displays if DEBUG is true
+ */
+function showFPS(){
+	if(! DEBUG) return;
+
+	//SETTING UP THE DEBUG PLUGIN. THIS WILL RUN ON ALL SCENES
+	game.debug.font = "24px monospace";
+	game.debug.lineHeight = 20;
+	if (!game.timing) {
+		game.timing = game.plugins.add(Phaser.Plugin.AdvancedTiming);
+	}
+	//this affects the game physics and not the actual displayed FPS. Setting this to our desired frame rate will allow catchup mechanics in the physics to work better in instances where the framerate drops below this desired rate
+	game.time.desiredFps = 30;
+	game.time.advancedTiming = true;
 }

@@ -58,14 +58,14 @@ gulp.task('sass-styles', function() {
 gulp.task('scripts', function() {
     console.log('Scripting...');
 
-    return gulp.src([SRC_PATH+'scripts/variables.js',SRC_PATH+'scripts/functions.js',SRC_PATH+'scripts/game.js', SCRIPTS_PATH])
+    return gulp.src([SRC_PATH+'scripts/setup.js',SRC_PATH+'scripts/functions.js',SRC_PATH+'scripts/scene-main.js', SRC_PATH+'scripts/game.js'])
         .pipe(plumber(function(err){
           //this function will run WHEN an error occurs in this task
           console.log('Styles Task Error');
           console.log(err);
           this.emit('end'); //this line will stop this task chain but continue running gulp
         }))
-        .pipe(uglify())
+        //.pipe(uglify())
         .pipe(concat('game.js'))
         .pipe(gulp.dest(THEME_PATH + '/js'));
 });

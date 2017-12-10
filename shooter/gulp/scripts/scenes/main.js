@@ -10,10 +10,15 @@ scenes.main.prototype = {
 		game.load.image('cannon_barrel', 'assets/sprites/cannon_barrel.png');
 		game.load.image('bullet', 'assets/sprites/bullet.png');
 		game.load.spritesheet('dude', 'assets/spritesheets/dudeSheet.png', 159, 250);
+		game.load.image('tiles', 'assets/spritesheets/tiles.png');
 	},
 	create: function(){
 		game.stage.backgroundColor = "#006666";
 		game.physics.startSystem(Phaser.Physics.ARCADE);
+
+		game.world.setBounds(world.x1, world.y1, world.x2, world.y2);
+		land = game.add.tileSprite(world.x1, world.y1, world.x2, world.y2, 'tiles');
+		//land.fixedToCamera = true;
 		//game.physics.arcade.gravity.y = 0;
 
 		//addStateListeners();
@@ -21,8 +26,25 @@ scenes.main.prototype = {
 
 		game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
 
+		bullets = game.add.group();
+		bullets.enableBody = true;
+		bullets.physicsBodyType = Phaser.Physics.ARCADE;
+		bullets.createMultiple(numBullets,'bullet');
+
+		//remove bullets outside of world bounds
+		//bullets.setAll('checkWorldBounds', true);
+
+		//remove bullets off screen
+		bullets.setAll('autoCull', true);
+		bullets.setAll('outOfCameraBoundsKill', true);
+
+		bullets.setAll('anchor.x', 0.5);
+		bullets.setAll('anchor.y', 0.5);
+		//bullets.setAll('scale.x', 0.7);
+		//bullets.setAll('scale.y', 0.7);
+
 		player.sprite = game.add.sprite(screen.centerX,screen.centerY, 'cannon_base');
-		player.sprite.anchor.setTo(0.3, 0.5);
+		player.sprite.anchor.setTo(0.5, 0.5);
 
 		//enable physics on dude
 		game.physics.enable(player.sprite);
@@ -33,20 +55,10 @@ scenes.main.prototype = {
 
 		barrel = game.add.sprite(0, 0, 'cannon_barrel');
 		player.sprite.addChild(barrel);
-		barrel.anchor.setTo(0.1, 0.5);
+		barrel.anchor.setTo(0.5, 0.5);
 
-		bullets = game.add.group();
-		bullets.enableBody = true;
-		bullets.physicsBodyType = Phaser.Physics.ARCADE;
-		bullets.createMultiple(20,'bullet');
-		bullets.setAll('checkWorldBounds', true);
-		bullets.setAll('outOfBoundsKill', true);
-		bullets.setAll('anchor.x', 0.5);
-		bullets.setAll('anchor.y', 0.5);
-		//bullets.setAll('scale.x', 0.7);
-		//bullets.setAll('scale.y', 0.7);
-
-
+		player.sprite.bringToTop();
+		barrel.bringToTop();
 
 		//largeEnemy.sprite = game.add.sprite(screen.centerX / 2, screen.centerY, 'dude');
 		//largeEnemy.sprite.anchor.setTo(0.5, 0.5);
@@ -69,8 +81,6 @@ scenes.main.prototype = {
 		game.physics.arcade.collide(player.sprite, enemyGroup, this.takeDamage, null, this);
 
 		player.sprite.rotation = game.physics.arcade.angleToPointer(player.sprite);
-		bullets.forEachAlive(game.debug.body,game.debug,"red",false);
-		bullets.forEachAlive(game.debug.spriteBounds,game.debug,"blue",false);
 
 
 		//game.physics.arcade.overlap(bullets, largeEnemy.sprite, this.hitEnemy);
@@ -131,6 +141,10 @@ scenes.main.prototype = {
 		 }
 
 		 this.moveEnimies();
+
+		//bullets.forEachAlive(game.debug.body,game.debug,"red",false);
+ 		//bullets.forEachAlive(game.debug.spriteBounds,game.debug,"blue",false);
+
 	},
 	fire: function(){
 		if(game.time.now > nextFire){
@@ -150,8 +164,13 @@ scenes.main.prototype = {
 	hitGroup: function(b,e){
 		//game.debug.body(b);
 		//game.debug.body(e);
+
+		kills = kills + 1;
+		points = points + enemies[e.key].points;
+
 		e.kill();
 		b.kill();
+
 		scenes.main.prototype.createEnemy();
 	},
 	moveEnimies: function() {
@@ -187,7 +206,23 @@ scenes.main.prototype = {
 		newEnemy.animations.play('walk', 12, true);
 
 	},
-	takeDamage: function(player, enemy) {
-		console.log('DAMAGE!');
+	takeDamage: function(p, enemy) {
+		//console.log('DAMAGE!');
+		if(game.time.now > nextDamage){
+			nextDamage = game.time.now + damageRate;
+
+			player.health = player.health - enemies[enemy.key].damage;
+		}
+
+
+		if(player.health <= 0){
+			debugLog('DIE!');
+		}
+	},
+	render: function(){
+		//game.debug.body(barrel);
+		game.debug.text('Enemy kills: ' + kills, 32, 50);
+		game.debug.text('Points: ' + points, 32, 80);
+		game.debug.text('Health: ' + player.health, 32, 110);
 	}
 }

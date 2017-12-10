@@ -30,17 +30,18 @@ enemies.dude.speed = 6;
 enemies.dude.isJumping = false;
 enemies.dude.jumpTimer = 0;
 enemies.dude.tilemap = 300;
-enemies.dude.velocity = 100;
+enemies.dude.velocity = 25;
 
 var player = {},
 	barrel = null,
 	bullets = null,
-	bullet_velocity = 1000,
+	bullet_velocity = 250,
 	nextFire = 0, //next game.time to fire at
-	bulletRate = 100, //millisecond delay on bullet shots
+	bulletRate = 150, //millisecond delay on bullet shots
 	largeEnemy = {},
 	enemyGroup = null,
-	bullet = null;
+	bullet = null,
+	frameNames = null;
 
 player.sprite = null;
 player.speed = 6;

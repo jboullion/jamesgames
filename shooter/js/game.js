@@ -7,11 +7,13 @@ screen.height = 800;
 screen.centerX = screen.width / 2;
 screen.centerY = screen.height / 2;
 
+/*
 var world = {};
 world.x1 = -screen.width,
 world.y1 = -screen.height,
 world.x2 = screen.width*2,
 world.y2 = screen.height*2;
+*/
 
 //setup scenes
 var scenes = {},
@@ -43,7 +45,7 @@ enemies.dude.points = 5;
 var player = {},
 	barrel = null,
 	bullets = null,
-	numBullets = 10, //this is the maximum number of bullets we will have in our group
+	numBullets = 30, //this is the maximum number of bullets we will have in our group
 	bullet_velocity = 400,
 	nextFire = 0, //next game.time to fire at
 	bulletRate = 150, //millisecond delay on bullet shots
@@ -55,7 +57,10 @@ var player = {},
 	points = 0,
 	nextDamage = 0,
 	damageRate = 300,
-	land = null;
+	land = null,
+	pad = null,
+	stick1 = null,
+	stick2 = null;
 
 player.sprite = null;
 player.speed = 6;
@@ -225,13 +230,16 @@ scenes.main.prototype = {
 		game.load.image('bullet', 'assets/sprites/bullet.png');
 		game.load.spritesheet('dude', 'assets/spritesheets/dudeSheet.png', 159, 250);
 		game.load.image('tiles', 'assets/spritesheets/tiles.png');
+		this.load.atlas('arcade', 'assets/spritesheets/virtualjoystick/arcade-joystick.png', 'assets/spritesheets/virtualjoystick/arcade-joystick.json');
 	},
 	create: function(){
-		game.stage.backgroundColor = "#006666";
 		game.physics.startSystem(Phaser.Physics.ARCADE);
+		game.stage.backgroundColor = "#006666";
+		game.world.setBounds(0,0,screen.width, screen.height);
 
-		game.world.setBounds(world.x1, world.y1, world.x2, world.y2);
-		land = game.add.tileSprite(world.x1, world.y1, world.x2, world.y2, 'tiles');
+		//game.world.setBounds(world.x1, world.y1, world.x2, world.y2);
+		//land = game.add.tileSprite(world.x1, world.y1, world.x2, world.y2, 'tiles');
+
 		//land.fixedToCamera = true;
 		//game.physics.arcade.gravity.y = 0;
 
@@ -246,11 +254,12 @@ scenes.main.prototype = {
 		bullets.createMultiple(numBullets,'bullet');
 
 		//remove bullets outside of world bounds
-		//bullets.setAll('checkWorldBounds', true);
+		bullets.setAll('checkWorldBounds', true);
+		bullets.setAll('outOfBoundsKill', true);
 
 		//remove bullets off screen
-		bullets.setAll('autoCull', true);
-		bullets.setAll('outOfCameraBoundsKill', true);
+		//bullets.setAll('autoCull', true);
+		//bullets.setAll('outOfCameraBoundsKill', true);
 
 		bullets.setAll('anchor.x', 0.5);
 		bullets.setAll('anchor.y', 0.5);
@@ -289,6 +298,17 @@ scenes.main.prototype = {
 		for(var i = 0; i < numEnemies; i++){
 			this.createEnemy();
 		}
+
+		//https://phaser.io/examples/v2/virtualjoystick/dual-sticks
+		pad = game.plugins.add(Phaser.VirtualJoystick);
+
+		stick1 = pad.addStick(0, 0, 100, 'arcade');
+		stick1.scale = 0.6;
+		stick1.alignBottomLeft(48);
+
+		stick2 = pad.addStick(0, 0, 100, 'arcade');
+		stick2.scale = 0.6;
+		stick2.alignBottomRight(48);
 
 	},
 	update: function(){
@@ -365,10 +385,12 @@ scenes.main.prototype = {
 			nextFire = game.time.now + bulletRate;
 
 			bullet = bullets.getFirstDead();
-			bullet.reset(player.sprite.x, player.sprite.y);
+			if(bullet){
+				bullet.reset(player.sprite.x, player.sprite.y);
 
-			game.physics.arcade.moveToPointer(bullet, bullet_velocity);
-			bullet.rotation = game.physics.arcade.angleToPointer(bullet);
+				game.physics.arcade.moveToPointer(bullet, bullet_velocity);
+				bullet.rotation = game.physics.arcade.angleToPointer(bullet);
+			}
 		}
 	},
 	hitEnemy: function(){

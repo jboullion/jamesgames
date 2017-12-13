@@ -7,11 +7,13 @@ screen.height = 800;
 screen.centerX = screen.width / 2;
 screen.centerY = screen.height / 2;
 
+/*
 var world = {};
 world.x1 = -screen.width,
 world.y1 = -screen.height,
 world.x2 = screen.width*2,
 world.y2 = screen.height*2;
+*/
 
 //setup scenes
 var scenes = {},
@@ -43,7 +45,7 @@ enemies.dude.points = 5;
 var player = {},
 	barrel = null,
 	bullets = null,
-	numBullets = 10, //this is the maximum number of bullets we will have in our group
+	numBullets = 30, //this is the maximum number of bullets we will have in our group
 	bullet_velocity = 400,
 	nextFire = 0, //next game.time to fire at
 	bulletRate = 150, //millisecond delay on bullet shots
@@ -55,7 +57,10 @@ var player = {},
 	points = 0,
 	nextDamage = 0,
 	damageRate = 300,
-	land = null;
+	land = null,
+	pad = null,
+	stick1 = null,
+	stick2 = null;
 
 player.sprite = null;
 player.speed = 6;

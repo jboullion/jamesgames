@@ -11,13 +11,16 @@ scenes.main.prototype = {
 		game.load.image('bullet', 'assets/sprites/bullet.png');
 		game.load.spritesheet('dude', 'assets/spritesheets/dudeSheet.png', 159, 250);
 		game.load.image('tiles', 'assets/spritesheets/tiles.png');
+		this.load.atlas('arcade', 'assets/spritesheets/virtualjoystick/arcade-joystick.png', 'assets/spritesheets/virtualjoystick/arcade-joystick.json');
 	},
 	create: function(){
-		game.stage.backgroundColor = "#006666";
 		game.physics.startSystem(Phaser.Physics.ARCADE);
+		game.stage.backgroundColor = "#006666";
+		game.world.setBounds(0,0,screen.width, screen.height);
 
-		game.world.setBounds(world.x1, world.y1, world.x2, world.y2);
-		land = game.add.tileSprite(world.x1, world.y1, world.x2, world.y2, 'tiles');
+		//game.world.setBounds(world.x1, world.y1, world.x2, world.y2);
+		//land = game.add.tileSprite(world.x1, world.y1, world.x2, world.y2, 'tiles');
+
 		//land.fixedToCamera = true;
 		//game.physics.arcade.gravity.y = 0;
 
@@ -32,11 +35,12 @@ scenes.main.prototype = {
 		bullets.createMultiple(numBullets,'bullet');
 
 		//remove bullets outside of world bounds
-		//bullets.setAll('checkWorldBounds', true);
+		bullets.setAll('checkWorldBounds', true);
+		bullets.setAll('outOfBoundsKill', true);
 
 		//remove bullets off screen
-		bullets.setAll('autoCull', true);
-		bullets.setAll('outOfCameraBoundsKill', true);
+		//bullets.setAll('autoCull', true);
+		//bullets.setAll('outOfCameraBoundsKill', true);
 
 		bullets.setAll('anchor.x', 0.5);
 		bullets.setAll('anchor.y', 0.5);
@@ -75,6 +79,17 @@ scenes.main.prototype = {
 		for(var i = 0; i < numEnemies; i++){
 			this.createEnemy();
 		}
+
+		//https://phaser.io/examples/v2/virtualjoystick/dual-sticks
+		pad = game.plugins.add(Phaser.VirtualJoystick);
+
+		stick1 = pad.addStick(0, 0, 100, 'arcade');
+		stick1.scale = 0.6;
+		stick1.alignBottomLeft(48);
+
+		stick2 = pad.addStick(0, 0, 100, 'arcade');
+		stick2.scale = 0.6;
+		stick2.alignBottomRight(48);
 
 	},
 	update: function(){
@@ -151,10 +166,12 @@ scenes.main.prototype = {
 			nextFire = game.time.now + bulletRate;
 
 			bullet = bullets.getFirstDead();
-			bullet.reset(player.sprite.x, player.sprite.y);
+			if(bullet){
+				bullet.reset(player.sprite.x, player.sprite.y);
 
-			game.physics.arcade.moveToPointer(bullet, bullet_velocity);
-			bullet.rotation = game.physics.arcade.angleToPointer(bullet);
+				game.physics.arcade.moveToPointer(bullet, bullet_velocity);
+				bullet.rotation = game.physics.arcade.angleToPointer(bullet);
+			}
 		}
 	},
 	hitEnemy: function(){

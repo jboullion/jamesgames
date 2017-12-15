@@ -314,14 +314,32 @@ scenes.main.prototype = {
 	update: function(){
 		game.physics.arcade.collide(player.sprite, enemyGroup, this.takeDamage, null, this);
 
-		player.sprite.rotation = game.physics.arcade.angleToPointer(player.sprite);
-
-
 		//game.physics.arcade.overlap(bullets, largeEnemy.sprite, this.hitEnemy);
 		game.physics.arcade.overlap(bullets, enemyGroup, this.hitGroup);
 
+		if (stick1.isDown)
+		{
+			game.physics.arcade.velocityFromRotation(stick1.rotation, stick1.force * player.speed * 50, player.sprite.body.velocity);
+			//player.sprite.rotation = stick1.rotation;
+		}
+		else
+		{
+			player.sprite.body.velocity.set(0);
+		}
+
+		if (stick2.isDown)
+		{
+			this.fireBullet();
+		}
+
+
+/*		KEYBOARD MOVEMENTS
+
+		//rotate player
+		player.sprite.rotation = game.physics.arcade.angleToPointer(player.sprite);
+
 		if(game.input.activePointer.isDown){
-			this.fire();
+			this.fireBullet();
 		}
 
 		if(game.input.keyboard.isDown(Phaser.Keyboard.RIGHT) ||
@@ -373,14 +391,30 @@ scenes.main.prototype = {
 			 //player.sprite.animations.stop();
 			 //player.sprite.frame = 0;
 		 }
-
+*/
 		 this.moveEnimies();
 
 		//bullets.forEachAlive(game.debug.body,game.debug,"red",false);
  		//bullets.forEachAlive(game.debug.spriteBounds,game.debug,"blue",false);
 
 	},
-	fire: function(){
+	fireBullet: function(){
+		if(game.time.now > nextFire){
+			nextFire = game.time.now + bulletRate;
+
+			bullet = bullets.getFirstDead();
+			if(bullet){
+				bullet.reset(player.sprite.x, player.sprite.y);
+				bullet.rotation = stick2.rotation;
+				player.sprite.rotation = stick2.rotation;
+				game.physics.arcade.velocityFromRotation(stick2.rotation, bullet_velocity, bullet.body.velocity);
+				//game.physics.arcade.moveToPointer(bullet, bullet_velocity);
+				//bullet.rotation = game.physics.arcade.angleToPointer(bullet);
+			}
+		}
+	},
+	/*
+	fireBullet: function(){
 		if(game.time.now > nextFire){
 			nextFire = game.time.now + bulletRate;
 
@@ -393,6 +427,7 @@ scenes.main.prototype = {
 			}
 		}
 	},
+	*/
 	hitEnemy: function(){
 		largeEnemy.sprite.kill();
 		bullet.kill();
@@ -443,7 +478,7 @@ scenes.main.prototype = {
 
 	},
 	takeDamage: function(p, enemy) {
-		//console.log('DAMAGE!');
+
 		if(game.time.now > nextDamage){
 			nextDamage = game.time.now + damageRate;
 
@@ -452,7 +487,7 @@ scenes.main.prototype = {
 
 
 		if(player.health <= 0){
-			debugLog('DIE!');
+			//debugLog('DIE!');
 		}
 	},
 	render: function(){

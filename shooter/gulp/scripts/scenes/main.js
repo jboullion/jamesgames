@@ -67,17 +67,22 @@ scenes.main.prototype = {
 		//largeEnemy.sprite = game.add.sprite(screen.centerX / 2, screen.centerY, 'dude');
 		//largeEnemy.sprite.anchor.setTo(0.5, 0.5);
 		//game.physics.enable(largeEnemy.sprite);
-
+		/*
 		enemyGroup = game.add.group();
 		enemyGroup.enableBody = true;
 		enemyGroup.physicsBodyType = Phaser.Physics.ARCADE;
+		*/
+		enemyGroup = game.add.group();
+		enemyGroup.classType = BasicEnemy;
+		enemyGroup.createMultiple(numEnemies);
 
 		game.physics.enable([player.sprite, enemyGroup]);
 
 		//create our enemies!
-		var numEnemies = 5;
+
 		for(var i = 0; i < numEnemies; i++){
-			this.createEnemy();
+			enemies.push(new EnemyTank(i, game, tank, enemyBullets));
+			//this.createEnemy();
 		}
 
 		//https://phaser.io/examples/v2/virtualjoystick/dual-sticks
@@ -93,10 +98,15 @@ scenes.main.prototype = {
 
 	},
 	update: function(){
+		//enemies collide with player
 		game.physics.arcade.collide(player.sprite, enemyGroup, this.takeDamage, null, this);
 
-		//game.physics.arcade.overlap(bullets, largeEnemy.sprite, this.hitEnemy);
-		game.physics.arcade.overlap(bullets, enemyGroup, this.hitGroup);
+		//enemies collide with themselves
+		game.physics.arcade.collide(enemyGroup);
+
+		//bullets collide with enemies
+		game.physics.arcade.overlap(bullets, largeEnemy.sprite, this.hitEnemy);
+		//game.physics.arcade.collide(bullets, enemyGroup, this.hitGroup);
 
 		if (stick1.isDown)
 		{
@@ -244,6 +254,7 @@ scenes.main.prototype = {
 
 		//enemyGroup.forEachAlive(game.debug.body,game.debug,"#ff9090",false);
 	},
+	/*
 	createEnemy: function() {
 		var newEnemy = enemyGroup.create(getRandomInt(50,screen.width - 75), getRandomInt(50,screen.height - 75), 'dude');
 		newEnemy.anchor.x = 0.5;
@@ -258,6 +269,7 @@ scenes.main.prototype = {
 		newEnemy.animations.play('walk', 12, true);
 
 	},
+	*/
 	takeDamage: function(p, enemy) {
 
 		if(game.time.now > nextDamage){

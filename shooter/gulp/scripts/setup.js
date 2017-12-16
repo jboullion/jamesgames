@@ -30,17 +30,6 @@ scenes.states[SCORESCENE] = 'score';
 /**
  * Player and enemies
  */
-//setup enemies
-var enemies = {};
-enemies.dude = {};
-enemies.dude.sprite = null;
-enemies.dude.speed = 6;
-enemies.dude.isJumping = false;
-enemies.dude.jumpTimer = 0;
-enemies.dude.tilemap = 300;
-enemies.dude.velocity = 25;
-enemies.dude.damage = 5;
-enemies.dude.points = 5;
 
 var player = {},
 	barrel = null,
@@ -51,6 +40,7 @@ var player = {},
 	bulletRate = 150, //millisecond delay on bullet shots
 	largeEnemy = {},
 	enemyGroup = null,
+	numEnemies = 5,
 	bullet = null,
 	frameNames = null,
 	kills = 0,

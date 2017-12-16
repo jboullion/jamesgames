@@ -5,28 +5,28 @@
  * @param mixed Storage Value
  */
 function storeLocal(name, value){
-   if (typeof(Storage) !== "undefined") {
-	   localStorage.setItem(name, JSON.stringify(value));
-   }else{
-	   //if we do not have local storage for some reason try to use cookies
-	   //we are just saving for 1 day for now
-	   setCookie(name, JSON.stringify(value), 1);
-   }
+	if (typeof(Storage) !== "undefined") {
+		localStorage.setItem(name, JSON.stringify(value));
+	}else{
+		//if we do not have local storage for some reason try to use cookies
+		//we are just saving for 1 day for now
+		setCookie(name, JSON.stringify(value), 1);
+	}
 }
 
 /**
  * GET any value to local storage
  * @param  string cname  Storage Name
- * @return string        Storage Value
+ * @return string		  Storage Value
  */
 function getLocal(name){
 
-   if (typeof(Storage) !== "undefined") {
-	   return JSON.parse(localStorage.getItem(name));
-   }else{
-	   //if we do not have local storage for some reason try to use cookies
-	   return JSON.parse(getCookie(name));
-   }
+	if (typeof(Storage) !== "undefined") {
+		return JSON.parse(localStorage.getItem(name));
+	}else{
+		//if we do not have local storage for some reason try to use cookies
+		return JSON.parse(getCookie(name));
+	}
 
 }
 
@@ -46,7 +46,7 @@ function setCookie(cname, cvalue, exdays) {
 /**
  * Get a cookie
  * @param  string cname  Cookie Name
- * @return string        Cookie Value
+ * @return string		  Cookie Value
  */
 function getCookie(cname) {
 	var name = cname + "=";
@@ -76,7 +76,7 @@ function deleteCookie(cname) {
  * @param mixed data any value you would like to log to the console
  */
 function debugLog(data){
-    if(DEBUG !== 1) return false;
+	 if(DEBUG !== 1) return false;
 
 	console.log(data);
 }

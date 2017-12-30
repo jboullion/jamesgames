@@ -4,192 +4,217 @@ import HUD from '../prefabs/hud';
 
 export default class Play extends Phaser.State {
 
-	create() {
+    create() {
 
-		//addStateListeners();
-		//showFPS();
+        this.farback = this.add.tileSprite(0, 0, 800, 2380, 'farback');
 
-		bullets = this.game.add.group();
-		bullets.enableBody = true;
-		bullets.physicsBodyType = Phaser.Physics.ARCADE;
-		bullets.createMultiple(numBullets,'bullet');
+        this.game.time.slowMotion = 1;
 
-		//remove bullets outside of world bounds
-		bullets.setAll('checkWorldBounds', true);
-		bullets.setAll('outOfBoundsKill', true);
+        this.enemies = this.add.group();
+        this.enemies.enableBody = true;
 
-		//remove bullets off screen
-		//bullets.setAll('autoCull', true);
-		//bullets.setAll('outOfCameraBoundsKill', true);
+        this.player = new Player({
+            game: this.game,
+            x: this.game.world.centerX,
+            y: 0.92 * this.game.world.height,
+            health: 100,
+            asset: 'smallfighter',
+            frame: 1
+        });
+        this.game.stage.addChild(this.player);
 
-		bullets.setAll('anchor.x', 0.5);
-		bullets.setAll('anchor.y', 0.5);
-		//bullets.setAll('scale.x', 0.7);
-		//bullets.setAll('scale.y', 0.7);
+        this.hud = new HUD({
+            game: this.game,
+            player: this.player
+        });
 
-		player.sprite = this.game.add.sprite(screen.centerX,screen.centerY, 'cannon_base');
-		player.sprite.anchor.setTo(0.5, 0.5);
+        this.game.input.onDown.add(() => {
+            this.game.time.slowMotion = 1;
+        });
 
-		//enable physics on dude
-		this.game.physics.enable(player.sprite);
-		player.sprite.body.collideWorldBounds = true;
+        this.game.input.onUp.add(() => {
+            this.game.time.slowMotion = 3;
+        });
 
-		this.game.camera.follow(player.sprite);
-		this.game.camera.deadzone = new Phaser.Rectangle(screen.centerX - 100, 0, 200, 200);
+        this.enemyTime = 0;
+        this.enemyInterval = 1.5;
+        this.enemyShootTime = 0;
+        this.enemyShootInterval = 1;
+        this.playerShootTime = 0;
+        this.playerShootInterval = 0.16;
 
-		barrel = this.game.add.sprite(0, 0, 'cannon_barrel');
-		player.sprite.addChild(barrel);
-		barrel.anchor.setTo(0.5, 0.5);
+        this.game.time.events.loop(Phaser.Timer.SECOND * 10, () => {
+            if(this.enemyInterval > 0.2 ){
+                this.enemyInterval -= 0.1;
+            }
+        });
 
-		player.sprite.bringToTop();
-		barrel.bringToTop();
+        this.overlayBitmap = this.add.bitmapData(this.game.width, this.game.height);
+        this.overlayBitmap.ctx.fillStyle = '#000';
+        this.overlayBitmap.ctx.fillRect(0, 0, this.game.width, this.game.height);
 
-		enemyGroup = this.game.add.group();
-		enemyGroup.classType = BasicEnemy;
-		enemyGroup.createMultiple(numEnemies);
+        this.overlay = this.add.sprite(0, 0, this.overlayBitmap);
+        this.overlay.visible = false;
+        this.overlay.alpha = 0.75;
 
-		this.game.physics.enable([player.sprite, enemyGroup]);
+        this.music = this.game.add.audio('playMusic');
+        this.bulletHitSound = this.add.sound('bulletHit');
+        this.enemyExplosionSound = this.add.sound('enemyExplosion');
+        this.playerExplosionSound = this.add.sound('playerExplosion');
+        this.gameOverSound = this.add.sound('gameOver');
 
-		//create our enemies!
+        this.music.loopFull();
+    }
 
-		for(var i = 0; i < numEnemies; i++){
-			enemies.push(new EnemyTank(i, game, tank, enemyBullets));
-			//this.createEnemy();
-		}
+    update() {
 
-		//https://phaser.io/examples/v2/virtualjoystick/dual-sticks
-		pad = this.game.plugins.add(Phaser.VirtualJoystick);
+        this.enemyTime += this.game.time.physicsElapsed;
+        this.enemyShootTime += this.game.time.physicsElapsed;
+        this.playerShootTime += this.game.time.physicsElapsed;
 
-		stick1 = pad.addStick(0, 0, 100, 'arcade');
-		stick1.scale = 0.6;
-		stick1.alignBottomLeft(48);
+        if (this.enemyTime > this.enemyInterval) {
+            this.enemyTime = 0;
 
-		stick2 = pad.addStick(0, 0, 100, 'arcade');
-		stick2.scale = 0.6;
-		stick2.alignBottomRight(48);
+            this.createEnemy({
+                game: this.game,
+                x: this.game.rnd.integerInRange(6, 76) * 10,
+                y: 0,
+                speed: {
+                    x: this.game.rnd.integerInRange(5, 10) * 10 * (Math.random() > 0.5 ? 1 : -1),
+                    y: this.game.rnd.integerInRange(5, 10) * 10
+                },
+                health: 9,
+                bulletSpeed: this.game.rnd.integerInRange(10, 20) * 10,
+                asset: 'alien'
+            });
+        }
 
-	}
+        if (this.enemyShootTime > this.enemyShootInterval) {
+            this.enemyShootTime = 0;
+            this.enemies.forEachAlive(enemy => enemy.shoot());
+            if (!this.player.alive) {
+                this.game.world.bringToTop(this.overlay);
+            }
+        }
 
-	update() {
+        if (this.playerShootTime > this.playerShootInterval) {
+            this.playerShootTime = 0;
+            if (this.player.alive) {
+                this.player.shoot();
+            }
+        }
 
-		//enemies collide with player
-		this.game.physics.arcade.collide(player.sprite, enemyGroup, this.takeDamage, null, this);
+        this.game.physics.arcade.overlap(this.player.bullets, this.enemies, this.hitEnemy, null, this);
 
-		//enemies collide with themselves
-		this.game.physics.arcade.collide(enemyGroup);
+        this.game.physics.arcade.overlap(this.player, this.enemies, this.crashEnemy, null, this);
 
-		//bullets collide with enemies
-		this.game.physics.arcade.overlap(bullets, largeEnemy.sprite, this.hitEnemy);
-		//game.physics.arcade.collide(bullets, enemyGroup, this.hitGroup);
+        this.enemies.forEach(enemy => this.game.physics.arcade.overlap(this.player, enemy.bullets, this.hitPlayer, null, this));
 
-		if (stick1.isDown)
-		{
-			this.game.physics.arcade.velocityFromRotation(stick1.rotation, stick1.force * player.speed * 50, player.sprite.body.velocity);
-			//player.sprite.rotation = stick1.rotation;
-		}
-		else
-		{
-			player.sprite.body.velocity.set(0);
-		}
+        this.farback.tilePosition.y += 3;
+    }
 
-		if (stick2.isDown)
-		{
-			this.fireBullet();
-		}
+    createEnemy(data) {
 
-		 this.moveEnimies();
+        let enemy = this.enemies.getFirstExists(false);
 
-	}
+        if (!enemy) {
+            enemy = new Enemy(data);
+            this.enemies.add(enemy);
+        }
+        enemy.reset(data);
+    }
 
-	fireBullet(){
-		if(this.game.time.now > nextFire){
-			nextFire = this.game.time.now + bulletRate;
+    hitEffect(obj, color) {
+        let tween = this.game.add.tween(obj);
+        let emitter = this.game.add.emitter();
+        let emitterPhysicsTime = 0;
+        let particleSpeed = 100;
+        let maxParticles = 10;
 
-			bullet = bullets.getFirstDead();
-			if(bullet){
-				bullet.reset(player.sprite.x, player.sprite.y);
-				bullet.rotation = stick2.rotation;
-				player.sprite.rotation = stick2.rotation;
-				this.game.physics.arcade.velocityFromRotation(stick2.rotation, bullet_velocity, bullet.body.velocity);
-				//game.physics.arcade.moveToPointer(bullet, bullet_velocity);
-				//bullet.rotation = game.physics.arcade.angleToPointer(bullet);
-			}
-		}
-	}
+        tween.to({tint: 0xff0000}, 100);
+        tween.onComplete.add(() => {
+            obj.tint = 0xffffff;
+        });
+        tween.start();
 
-	hitEnemy(){
-		largeEnemy.sprite.kill();
-		bullet.kill();
-	}
+        emitter.x = obj.x;
+        emitter.y = obj.y;
+        emitter.gravity = 0;
+        emitter.makeParticles('particle');
 
-	hitGroup(b,e){
-		//game.debug.body(b);
-		//game.debug.body(e);
+        if (obj.health <= 0) {
+            particleSpeed = 200;
+            maxParticles = 40;
+            color = 0xff0000;
+        }
 
-		kills = kills + 1;
-		points = points + enemies[e.key].points;
+        emitter.minParticleSpeed.setTo(-particleSpeed, -particleSpeed);
+        emitter.maxParticleSpeed.setTo(particleSpeed, particleSpeed);
+        emitter.start(true, 500, null, maxParticles);
+        emitter.update = () => {
+            emitterPhysicsTime += this.game.time.physicsElapsed;
+            if(emitterPhysicsTime >= 0.6){
+                emitterPhysicsTime = 0;
+                emitter.destroy();
+            }
 
-		e.kill();
-		b.kill();
+        };
+        emitter.forEach(particle => particle.tint = color);
+        if (!this.player.alive) {
+            this.game.world.bringToTop(this.overlay);
+        }
+    }
 
-		scenes.main.prototype.createEnemy();
-	}
+    hitEnemy(bullet, enemy) {
+        this.bulletHitSound.play("",0,0.5);
+        enemy.damage(bullet.health);
+        this.hitEffect(enemy, bullet.tint);
+        if (!enemy.alive) {
+            this.enemyExplosionSound.play("",0,0.5);
+            this.hud.updateScore(enemy.maxHealth);
+        }
+        bullet.kill();
+    }
 
-	moveEnimies() {
-		var t = player.sprite.body;
-		enemyGroup.forEachAlive(function(enemy) {
+    hitPlayer(player, bullet) {
+        this.bulletHitSound.play("",0,0.5);
+        player.damage(bullet.health);
+        this.hud.updateHealth();
+        this.hitEffect(player, bullet.tint);
+        if (!player.alive) {
+            this.playerExplosionSound.play();
+            this.gameOver();
+        }
+        bullet.kill();
+    }
 
-			var rotation = this.game.math.angleBetween(enemy.x, enemy.y, t.x, t.y);
-			enemy.body.velocity.x = Math.cos(rotation) * enemies.dude.velocity;
-			enemy.body.velocity.y = Math.sin(rotation) * enemies.dude.velocity;
+    crashEnemy(player, enemy) {
+        enemy.damage(enemy.health);
+        player.damage(enemy.health);
+        this.hitEffect(player);
+        this.hitEffect(enemy);
+        if (!enemy.alive) {
+            this.enemyExplosionSound.play("",0,0.5);
+            this.hud.updateScore(enemy.maxHealth);
+        }
+        this.hud.updateHealth();
+        if (!player.alive) {
+            this.playerExplosionSound.play();
+            this.gameOver();
+        }
+    }
 
-			if(enemy.body.velocity.x > 0){
-				enemy.scale.setTo(0.5, 0.5);
-				//enemy.anchor.x = -0.5;
-			}else{
-				enemy.scale.setTo(-0.5, 0.5);
-				//enemy.anchor.x = 0.5;
-			}
-		}, this);
-
-		//enemyGroup.forEachAlive(game.debug.body,game.debug,"#ff9090",false);
-	}
-	/*
-	createEnemy() {
-		var newEnemy = enemyGroup.create(getRandomInt(50,screen.width - 75), getRandomInt(50,screen.height - 75), 'dude');
-		newEnemy.anchor.x = 0.5;
-		newEnemy.anchor.y = 0.5;
-		newEnemy.scale.x =  0.5;
-		newEnemy.scale.y = 0.5;
-		newEnemy.body.velocity.x = enemies.dude.velocity;
-		newEnemy.body.velocity.y = enemies.dude.velocity;
-
-		//for some reason calling animate on the individual enemies does not work past the first animation cycle
-		newEnemy.animations.add('walk', [0,1,2]);
-		newEnemy.animations.play('walk', 12, true);
-
-	},
-	*/
-
-	takeDamage(p, enemy) {
-
-		if(this.game.time.now > nextDamage){
-			nextDamage = this.game.time.now + damageRate;
-
-			player.health = player.health - enemies[enemy.key].damage;
-		}
-
-
-		if(player.health <= 0){
-			//debugLog('DIE!');
-		}
-	}
-
-	render(){
-		//game.debug.body(barrel);
-		this.game.debug.text('Enemy kills: ' + kills, 32, 50);
-		this.game.debug.text('Points: ' + points, 32, 80);
-		this.game.debug.text('Health: ' + player.health, 32, 110);
-	}
+    gameOver(){
+        this.game.time.slowMotion = 3;
+        this.overlay.visible = true;
+        this.game.world.bringToTop(this.overlay);
+        let timer = this.game.time.create(this.game, true);
+        timer.add(3000, () => {
+            this.music.stop();
+            this.gameOverSound.play();
+            this.game.state.start('Over');
+        });
+        timer.start();
+    }
 
 }

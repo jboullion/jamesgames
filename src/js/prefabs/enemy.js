@@ -1,83 +1,79 @@
-/*
- * Enemy.js
- * @link http://metroid.niklasberg.se/2016/02/12/phaser-making-and-using-a-generic-enemy-class-es6es2015
- */
-class Enemy extends Phaser.Sprite {
-	constructor(game) {
-		super(game, 0, 0, "sprites"); // Setup Phaser.Sprite. It's coordinates is unimportant and I just set them to zero. "Sprites" is a spriteatlas with sprites for all enemies.
-		this.exist = false; // I create an enemy instance but don't want to add it to the stage. For this I use a spawn method (mainly to make it easier to reuse the enemies from it's type specific pool).
-		this.anchor.setTo(0.5, 0.5);
-		// Body
-		this.game.physics.enable(this);
-		this.body.allowGravity = false;
-		this.body.immovable = true;
-		this.maxHealth = 1; // Health to set when spawned
-		this.damage = 1; // Damage to Player
-		this.vulnerabilities = {
-			normal: 1,
-			ice: 10,
-			fire: 10,
-			bomb: 100,
-			missile: 100,
-		};
-		//let anim = this.animations.add("deathAnimation", ["boom0", "boom1", "boom2"], 15, false); // generic explosion when killed, can be overrided of course
-		//anim.onComplete.add(this.death, this);
-	}
+import Bullet from './bullet';
 
-	/* Standard reset is called from the spawn-function */
-	stdReset(x, y) {
-		this.reset(x, y);
-		this.health = this.maxHealth;
-		this.exists = true;
-		this.dying = false;
-		this.frozen = false;
-		//this.sleeping = true; // the enemy is sleeping, and will cancel it's update
-	}
+export default class Enemy extends Phaser.Sprite {
 
-	/* stdUpdate is called from the enemies' update methods to do generic stuff. If it return false the update loop in the enemy calling stdUpdate should be broken. */
-	stdUpdate() {
-		if (!this.exists && this.frozen) {
-			return false;
-		}
-		/*
-		if (this.sleeping) {
-			if (this.inCamera) { // the enemy is within camera, and wakes up and stays awake even outside camera after this.
-				this.sleeping = false;
-			}
-			return false;
-		}
-		*/
-		return true; // Continue update-loop
-	}
+    constructor({ game, x, y, asset, frame, health, bulletSpeed }) {
+        super(game, x, y, asset, frame);
 
-	hit(bullet) {
-		if (this.dying) { // While the enemy sprite plays it's death animation it should ignore all bullets
-			return;
-		}
-		if (bullet.type === "ice" && !this.frozen) { // Ice will freeze if not frozen, but defrost if the enemy is frozen
-			this.frozen = true;
-			//this.play("frozen");
-		} else {
-			this.frozen = false; // I don't care about resetting animation, this should be done by the enemy itself in its now continued update loop
-			this.health -= 1; //this.vulnerabilities[bullet.type];
-			if (this.vulnerabilities[bullet.type] === 0) { // A metallic "klonk" when there is no damage
-				//this.game.sound.play('ricochetShort');
-			}
-		}
+        this.game = game;
 
-		if (this.health < 1) {
-			this.dying = true;
-			this.body.velocity.x = 0;
-			this.body.velocity.y = 0;
-			this.body.allowGravity = false; // most enemies has this to false already, but not all
-			//this.play("deathAnimation");
-		}
-	}
+        this.anchor.setTo(0.5);
+        this.scale.setTo(0.8);
+        this.health = health;
+        this.maxHealth = health;
+        this.game.physics.arcade.enable(this);
 
-	death() {
-		//this.game.pickups.createNew(this.x, this.y, "random"); // The enemies randomly drops an energy dot or missile
-		this.exists = false;
-	}
+        this.animations.add('spinning', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], 30, true);
+        this.play('spinning');
+
+        this.bullets = this.game.add.group();
+        this.bullets.enableBody = true;
+        this.bulletSpeed = bulletSpeed;
+
+        this.shotSound = this.game.add.sound('enemyShot');
+
+    }
+
+    update() {
+
+        if (this.position.x < 0.04 * this.game.world.width) {
+            this.position.x = 0.04 * this.game.world.width + 2;
+            this.body.velocity.x *= -1;
+        }
+        else if (this.position.x > 0.96 * this.game.world.width) {
+            this.position.x = 0.96 * this.game.world.width - 2;
+            this.body.velocity.x *= -1;
+        }
+
+        if (this.position.y - this.height / 2 > this.game.world.height) {
+            this.kill();
+        }
+    }
+
+    shoot() {
+
+        this.shotSound.play("",0,0.5);
+
+        let bullet = this.bullets.getFirstExists(false);
+
+        if (!bullet) {
+            bullet = new Bullet({
+                game: this.game,
+                x: this.x,
+                y: this.bottom,
+                health: 2,
+                asset: 'bullet',
+                tint: 0xff0000
+            });
+            this.bullets.add(bullet);
+        }
+        else {
+            bullet.reset(this.x, this.bottom, 2);
+        }
+
+        bullet.body.velocity.y = this.bulletSpeed;
+    }
+
+    damage(amount) {
+        super.damage(amount);
+    }
+
+    reset({ x, y, health, bulletSpeed, speed }) {
+        super.reset(x, y, health);
+        this.bulletSpeed = bulletSpeed;
+        this.body.velocity.x = speed.x;
+        this.body.velocity.y = speed.y;
+    }
 }
 
 export default Enemy;

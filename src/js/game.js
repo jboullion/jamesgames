@@ -1,15 +1,8 @@
 import * as states from './states';
+const GAME = new Phaser.Game(800, 1000, Phaser.AUTO);
 
-class Game extends Phaser.Game {
-
-	constructor() {
-		super(1200, 800, Phaser.AUTO, 'content', null);
-		//this.state.add('GameState', GameState, false);
-		Object.keys(states).forEach(state => this.state.add(state, states[state]));
-		this.DEBUG = true;
-		this.state.start('Boot');
-	}
-
-}
+Object.keys(states).forEach(state => GAME.state.add(state, states[state]));
 
 new Game();
+
+GAME.state.start('Boot');

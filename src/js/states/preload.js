@@ -2,13 +2,24 @@ export default class Preload extends Phaser.State {
 
 	preload() {
 
+		//Loading Bar
 		this.loaderBg = this.add.sprite(this.game.world.centerX, this.game.world.centerY, 'loaderBg');
 		this.loaderBar = this.add.sprite(this.game.world.centerX, this.game.world.centerY, 'loaderBar');
 		this.loaderBg.anchor.setTo(0.5);
 		this.loaderBar.anchor.setTo(0.5);
 
-		this.load.setPreloadSprite(this.loaderBar);
+		//user Phaser built in loader to display out asset loading progress
+		//this.load.setPreloadSprite(this.loaderBar);
 
+		this.load.image('cannon_base', 'img/cannon_base.png');
+		this.load.image('cannon_barrel', 'img/cannon_barrel.png');
+		this.load.image('bullet', 'img/bullet.png');
+		this.load.spritesheet('dude', 'img/spritesheet/dudeSheet.png', 159, 250);
+		this.load.image('tiles', 'img/spritesheet/tiles.png');
+		this.load.atlas('arcade', 'img/spritesheet/virtualjoystick/arcade-joystick.png', 'img/spritesheets/virtualjoystick/arcade-joystick.json');
+
+		/*
+		//Infinite Plane Shooter game assets
 		this.load.atlasJSONArray('smallfighter', 'img/spritesheet/smallfighter.png', 'data/spritesheet/smallfighter.json');
 		this.load.atlasJSONArray('alien', 'img/spritesheet/alien.png', 'data/spritesheet/alien.json');
 		this.load.atlasJSONArray('button', 'img/spritesheet/button.png', 'data/spritesheet/button.json');
@@ -32,11 +43,12 @@ export default class Preload extends Phaser.State {
 		this.load.audio('playerExplosion', ['audio/sound/player-explosion.mp3']);
 
 		this.load.audio('gameOver', ['audio/sound/game-over.mp3']);
-
+*/
 	}
 
 	create() {
-		this.state.start('Menu');
+		//this.state.start('Menu');
+		this.state.start('Play');
 	}
 
 }

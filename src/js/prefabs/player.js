@@ -1,129 +1,73 @@
-import Bullet from './bullet';
-
-export default class Player extends Phaser.Sprite {
-
-	constructor({ game, x, y, asset, frame, health }) {
-		super(game, x, y, asset, frame);
-
-		this.game = game;
-
-		this.anchor.setTo(0.5);
-		this.scale.setTo(0.8);
-
-		this.health = health;
-		this.maxHealth = health;
-		this.lastshot = 0;
-		this.shotInterval = 0.16;
-
-		this.game.physics.arcade.enable(this);
-
-		this.lastPos = {x, y};
-
-		this.diff = {
-			x: 0,
-			y: 0
+/*
+ * Player.js
+ * @link http://metroid.niklasberg.se/2016/02/12/phaser-making-and-using-a-generic-enemy-class-es6es2015
+ */
+class Player extends Phaser.Sprite {
+	constructor(game) {
+		super(game, 0, 0, "sprites"); // Setup Phaser.Sprite. It's coordinates is unimportant and I just set them to zero. "Sprites" is a spriteatlas with sprites for all enemies.
+		this.alive = true;
+		this.anchor.setTo(0.5, 0.5);
+		// Body
+		this.game.physics.enable(this);
+		this.body.allowGravity = false;
+		this.body.immovable = false;
+		this.maxHealth = 1;
+		this.vulnerabilities = {
+			normal: 1,
+			ice: 10,
+			fire: 10,
+			bomb: 100,
+			missile: 100,
 		};
-
-		this.bullets = this.game.add.group();
-		this.bullets.enableBody = true;
-		this.bulletSpeed = -500;
-
-		this.shotSound = this.game.add.sound('playerShot');
-
-		this.game.input.onDown.add(() => {
-			if (this.alive) {
-				let {x,y} = this.game.input.activePointer.position;
-				this.diff.x = x - this.position.x;
-				this.diff.y = y - this.position.y;
-			}
-		});
-
-		this.game.input.onUp.add(() => {
-			if (this.alive) {
-				this.frame = 1;
-			}
-		});
-
+		//let anim = this.animations.add("deathAnimation", ["boom0", "boom1", "boom2"], 15, false); // generic explosion when killed, can be overrided of course
+		//anim.onComplete.add(this.death, this);
 	}
 
-	update() {
-
-		//this.game.debug.body(this);
-
-		//if (this.game.input.activePointer.isDown) {
-
-			let { x, y } = this.game.input.activePointer.position;
-
-			let left = x < this.lastPos.x;
-			let right = x > this.lastPos.x;
-			let diff = Math.abs(x - this.lastPos.x);
-
-			this.position.x = x - this.diff.x;
-			this.position.y = y - this.diff.y;
-
-			if (this.position.x < 0.02 * this.game.world.width) {
-				this.position.x = 0.02 * this.game.world.width;
-			}
-
-			if (this.position.x > 0.98 * this.game.world.width) {
-				this.position.x = 0.98 * this.game.world.width;
-			}
-
-			if (this.position.y < 0.09 * this.game.world.height) {
-				this.position.y = 0.09 * this.game.world.height;
-			}
-
-			if (this.position.y > 0.94 * this.game.world.height) {
-				this.position.y = 0.94 * this.game.world.height;
-			}
-
-			if (diff > 3) {
-				if (left) {
-					this.frame = 0;
-				} else if (right) {
-					this.frame = 2;
-				}
-			} else {
-				if (this.game.time.elapsedMS >= 16) {
-					this.frame = 1;
-				}
-			}
-
-
-			this.lastPos.x = x;
-			this.lastPos.y = y;
-		//}
+	/* Standard reset is called from the spawn-function */
+	stdReset(x, y) {
+		this.reset(x, y);
+		this.health = this.maxHealth;
+		this.alive = true;
+		this.dying = false;
+		this.frozen = false;
 	}
 
-	shoot() {
-		if (this.lastshot > this.shotInterval) {
-			this.lastshot = 0;
+	/* stdUpdate is called from the enemies' update methods to do generic stuff. If it return false the update loop in the enemy calling stdUpdate should be broken. */
+	stdUpdate() {
+		if (!this.exists && this.frozen) {
+			return false;
+		}
 
-			this.shotSound.play("",0,0.5);
+		return true; // Continue update-loop
+	}
 
-			let bullet = this.bullets.getFirstExists(false);
-
-			if (!bullet) {
-				bullet = new Bullet({
-					game: this.game,
-					x: this.x,
-					y: this.top,
-					health: 3,
-					asset: 'bullet',
-					tint: 0x04c112
-				});
-				this.bullets.add(bullet);
+	hit(enemy) {
+		if (this.dying) { // While the enemy sprite plays it's death animation it should ignore all bullets
+			return;
+		}
+		if (enemy.type === "ice" && !this.frozen) { // Ice will freeze if not frozen, but defrost if the enemy is frozen
+			this.frozen = true;
+			//this.play("frozen");
+		} else {
+			this.frozen = false;
+			this.health -= 1; //this.vulnerabilities[enemy.type];
+			if (this.vulnerabilities[enemy.type] === 0) { // A metallic "klonk" when there is no damage
+				//this.game.sound.play('ricochetShort');
 			}
-			else {
-				bullet.reset(this.x, this.top, 3);
-			}
+		}
 
-			bullet.body.velocity.y = this.bulletSpeed;
+		if (this.health < 1) {
+			this.dying = true;
+			this.body.velocity.x = 0;
+			this.body.velocity.y = 0;
+			//this.play("deathAnimation");
 		}
 	}
 
-	damage(amount) {
-		super.damage(amount);
+	death() {
+		//this.game.pickups.createNew(this.x, this.y, "random"); // The enemies randomly drops an energy dot or missile
+		this.alive = false;
 	}
-
 }
+
+export default Player;
